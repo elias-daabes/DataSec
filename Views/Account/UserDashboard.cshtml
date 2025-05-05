@@ -1,0 +1,71 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>User Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .welcome-box {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .welcome-message {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .username {
+            color: #0d6efd;
+        }
+        .nav-btn {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 24px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .nav-btn:hover {
+                background-color: #bb2d3b;
+            }
+
+    </style>
+</head>
+<body>
+    <div class="welcome-box">
+        <p class="welcome-message">Welcome user, <span class="username">@Session["UserName"]</span></p>
+    </div>
+    <div style="text-align: center;">
+        @using (Html.BeginForm("Logout", "Account"))
+        {
+            <input type="submit" class="nav-btn" value="Log Out" />
+        }
+    </div>
+
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .welcome-box {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .welcome-message {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .username {
+            color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-box">
+        <p class="welcome-message">Welcome Admin, <span class="username">@Session["UserName"]</span></p>
+    </div>
+
+    <div>
+        @using (Html.BeginForm("Logout", "Account"))
+        {
+            <input type="submit" class="nav-btn" value="Log Out" />
+        }
+    </div>
+</body>
+</html>
