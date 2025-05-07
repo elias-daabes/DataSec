@@ -1,4 +1,7 @@
-﻿@{
+﻿@model DataSec.Models.CreditCard
+
+
+@{
     Layout = null;
 }
 
@@ -35,6 +38,23 @@
         .username {
             color: #0d6efd;
         }
+        .nav-btn {
+            display: inline-block;
+            margin: 20px auto;
+            padding: 10px 24px;
+            background-color: #dc3545;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+            .nav-btn:hover {
+                background-color: #bb2d3b;
+            }
     </style>
 </head>
 <body>
@@ -47,6 +67,51 @@
         {
             <input type="submit" class="nav-btn" value="Log Out" />
         }
+    </div>
+    <div class="information-form">
+        <h2>Information</h2>
+        @using (Html.BeginForm("UpdateCardAdmin", "Account", FormMethod.Post))
+        {
+            <strong>ID:</strong> @Html.TextBoxFor(m => m.AccountId, new { @readonly = "readonly" }) <br />
+            <div class="form-group">
+                @Html.LabelFor(m => m.CardNumber, "Card Number:")
+                @Html.TextBoxFor(m => m.CardNumber, new { @class = "form-control", @maxlength = "16", @placeholder = "Enter card number" })
+                @Html.ValidationMessageFor(m => m.CardNumber, null, new { @class = "error-message" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.FirstName, "First Name:")
+                @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", @placeholder = "Enter first name" })
+                @Html.ValidationMessageFor(m => m.FirstName, null, new { @class = "error-message" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.LastName, "Last Name:")
+                @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", @placeholder = "Enter last name" })
+                @Html.ValidationMessageFor(m => m.LastName, null, new { @class = "error-message" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.IDNumber, "ID:")
+                @Html.TextBoxFor(m => m.IDNumber, new { @class = "form-control", @placeholder = "Enter ID" })
+                @Html.ValidationMessageFor(m => m.IDNumber, null, new { @class = "error-message" })
+            </div>
+
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.ValidDate, "Expiry Date (MM/YY):")
+                @Html.TextBoxFor(m => m.ValidDate, new { @class = "form-control", @placeholder = "MM/YY" })
+                @Html.ValidationMessageFor(m => m.ValidDate, null, new { @class = "error-message" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.CVC, "CVC:")
+                @Html.TextBoxFor(m => m.CVC, new { @class = "form-control", @maxlength = "4", @placeholder = "Enter CVC" })
+                @Html.ValidationMessageFor(m => m.CVC, null, new { @class = "error-message" })
+            </div>
+
+            <input id="Submit" type="submit" class="btn-submit" value="Update Card" />}
+        <br />
     </div>
 </body>
 </html>
