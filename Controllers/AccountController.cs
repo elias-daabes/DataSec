@@ -51,9 +51,10 @@ namespace DataSec.Controllers
                     //System.Diagnostics.Debug.WriteLine($"Session UserName: {Session["UserName"]}");
                     //System.Diagnostics.Debug.WriteLine($"Session Role: {Session["Role"]}");
                     CreditCard card = getCardByID(account.Id);
+                    List<CreditCard> cards = GetAllCreditCards();
 
                     if (account.Role.Equals("Admin"))
-                        return View("AdminDashboard", card);
+                        return View("AdminDashboard", cards);
                     else
                         return View("UserDashboard", card);
                 }
@@ -138,7 +139,7 @@ namespace DataSec.Controllers
         [HttpPost]
         public ActionResult ResetPassword(Account model)
         {
-                Account account = getAccountByUserName(model.Username, model.PasswordHash); 
+                Account account = GetAccountByUserName(model.Username, model.PasswordHash); 
                 if (account != null)
                 {
                     account.PasswordHash = ComputeSha256Hash(model.PasswordHash);
@@ -169,15 +170,15 @@ namespace DataSec.Controllers
             }
         }
 
-        //private Account GetAccountByUserName(string UserName)
-        //{
-        //    List<Account> accounts = getAccountsList();
-        //    foreach (var account in accounts)
-        //    {
-        //        if (account.Username.Equals(UserName)) return account;
-        //    }
-        //    return null;
-        //}
+        private Account GetAccountByUserName(string UserName)
+        {
+            List<Account> accounts = getAccountsList();
+            foreach (var account in accounts)
+            {
+                if (account.Username.Equals(UserName)) return account;
+            }
+            return null;
+        }
 
         public ActionResult AdminDashboard()
         {
@@ -185,20 +186,14 @@ namespace DataSec.Controllers
             if (string.IsNullOrEmpty(username))
                 return RedirectToAction("Login");
 
-            // Assuming you have a method to get the AccountId
             var account = getAccountByUserName(username);
             if (account == null)
                 return HttpNotFound();
 
-            // Try to find existing card
-            var card = getCardByID(account.Id);
-
-            // If not found, create empty one with AccountId set
-            if (card == null)
-                card = new CreditCard { AccountId = account.Id };
-            return View(card); // Return it to the view
-
+            var allCards = GetAllCreditCards();
+            return View(allCards);
         }
+
         public ActionResult UserDashboard()
         {
             string username = Session["UserName"]?.ToString();
@@ -293,94 +288,100 @@ namespace DataSec.Controllers
 
 
         //Secured
+        private Account ValidateUser(string username, string password)
+        {
+            Account account = getAccountByUserName(username);
+            if (account != null)
+            {
+                string enteredHash = ComputeSha256Hash(password);
+                if (account.PasswordHash.Equals(enteredHash))
+                {
+                    return account;
+                }
+            }
+            return null;
+        }
+
+
+        // PART 3 Updated
+        private Account GetAccountByUserName(string username, string password)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts " +
+                                  "WHERE UserName = @username AND PasswordHash = @passwordHash";
+
+                using (SqlCommand command = new SqlCommand(sqlQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@username", username);
+                    command.Parameters.AddWithValue("@passwordHash", ComputeSha256Hash(password));
+
+                    connection.Open();
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            return new Account
+                            {
+                                Id = reader.GetInt32(0),
+                                Username = reader.GetString(1),
+                                PasswordHash = reader.GetString(2),
+                                Role = reader.GetString(3),
+                            };
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+
+
         //private Account ValidateUser(string username, string password)
         //{
-        //    Account account = getAccountByUserName(username);
-        //    if (account != null)
+        //    using (SqlConnection connection = new SqlConnection(connectionString))
         //    {
         //        string enteredHash = ComputeSha256Hash(password);
-        //        if (account.PasswordHash.Equals(enteredHash))
+        //        // VULNERABLE TO SQL INJECTION (By-Pass Password)
+        //        //string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts WHERE UserName = '" + username + "' AND PasswordHash = '" + enteredHash + "' ";
+
+        //        // VULNERABLE TO SQL INJECTION (Attacking Password)
+        //        string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts WHERE UserName = '" + username + "' AND PasswordHash = '" + password + "' ";
+        //        using (SqlCommand command = new SqlCommand(sqlQuery, connection))
         //        {
-        //            return account;
+        //            connection.Open();
+        //            using (SqlDataReader reader = command.ExecuteReader())
+        //            {
+        //                if (reader.Read())
+        //                {
+        //                    return new Account
+        //                    {
+        //                        Id = reader.GetInt32(0),
+        //                        Username = reader.GetString(1),
+        //                        PasswordHash = reader.GetString(2),
+        //                        Role = reader.GetString(3),
+        //                    };
+        //                }
+        //            }
         //        }
         //    }
         //    return null;
         //}
 
-        private Account getAccountByUserName(string username, string password)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts " +
-                                  "WHERE UserName = '" + username + "' AND PasswordHash = '" + ComputeSha256Hash(password) + "'";
 
-                using (SqlCommand command = new SqlCommand(sqlQuery, connection))
-                {
-                    connection.Open();
+        //[HttpPost]
+        //public ActionResult UpdateCardAdmin(CreditCard updatedCard)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //       return View("AdminDashboard", updatedCard);
+        //    }
 
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return new Account
-                            {
-                                Id = reader.GetInt32(0),
-                                Username = reader.GetString(1),
-                                PasswordHash = reader.GetString(2),
-                                Role = reader.GetString(3),
-                            };
-                        }
-                    }
-                }
-            }
-            return null;
-        }
+        //    SaveCardChangesToDB(updatedCard);
 
-
-        private Account ValidateUser(string username, string password)
-        {
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                string enteredHash = ComputeSha256Hash(password);
-                // VULNERABLE TO SQL INJECTION (By-Pass Password)
-                string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts WHERE UserName = '" + username + "' AND PasswordHash = '" + enteredHash + "' ";
-
-                // VULNERABLE TO SQL INJECTION (Attacking Password)
-                //string sqlQuery = "SELECT Id, UserName, PasswordHash, Role FROM Accounts WHERE UserName = '" + username + "' AND PasswordHash = '" + password + "' ";
-                using (SqlCommand command = new SqlCommand(sqlQuery, connection))
-                {
-                    connection.Open();
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return new Account
-                            {
-                                Id = reader.GetInt32(0),
-                                Username = reader.GetString(1),
-                                PasswordHash = reader.GetString(2),
-                                Role = reader.GetString(3),
-                            };
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
-
-        [HttpPost]
-        public ActionResult UpdateCardAdmin(CreditCard updatedCard)
-        {
-            if (!ModelState.IsValid)
-            {
-               return View("AdminDashboard", updatedCard);
-            }
-
-            SaveCardChangesToDB(updatedCard);
-
-            return View("AdminDashboard", updatedCard);
-        }
+        //    return View("AdminDashboard", updatedCard);
+        //}
 
         [HttpPost]
         public ActionResult UpdateCard(CreditCard updatedCard)
@@ -422,6 +423,39 @@ namespace DataSec.Controllers
             }
           
         }
+
+
+        private List<CreditCard> GetAllCreditCards()
+        {
+            List<CreditCard> cards = new List<CreditCard>();
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string sqlQuery = @"SELECT AccountId, FirstName, LastName, IDNumber, CardNumber, ValidDate, CVC 
+                            FROM CreditCards";
+                using (SqlCommand command = new SqlCommand(sqlQuery, connection))
+                {
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            cards.Add(new CreditCard
+                            {
+                                AccountId = reader.GetInt32(0),
+                                FirstName = reader.GetString(1),
+                                LastName = reader.GetString(2),
+                                IDNumber = reader.GetString(3),
+                                CardNumber = reader.GetString(4),
+                                ValidDate = reader.GetString(5),
+                                CVC = reader.GetString(6)
+                            });
+                        }
+                    }
+                }
+            }
+            return cards;
+        }
+
 
 
     }
